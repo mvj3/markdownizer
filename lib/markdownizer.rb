@@ -120,20 +120,21 @@ module Markdownizer
     end
 
 
-    private
     def highlight text, options
-      text.gsub(%r/\{% code (\w+?) %\}(.+?)\{% endcode %\}|```(\w+?) +(.+?)```/m) do
+      text.gsub(%r/\{% code (\w+?) %\}((.|\n)+?)\{% endcode %\}|```\w+\s+?[\r\n\t]+.+[\r\n\t]+```/m) do |m|
         options.delete(:highlight_lines)
         options.delete(:caption)
-
         enclosing_class = options[:enclosing_class] || 'markdownizer_code'
-        code, language = $2.strip, $1.strip
 
-        language = if lexer = Pygments::Lexer.find_by_extname(language)
-          lexer.aliases[0]
+        if Markdownizer.highlight_engine == :pygments
+          language = if lexer = Pygments::Lexer.find_by_extname(language)
+            lexer.aliases[0]
+          else
+            'text'
+          end
         else
-          'text'
-        end if Markdownizer.highlight_engine == :pygments
+          code, language = $2.strip, $1.strip
+        end
 
         # Mark comments to avoid conflicts with Header parsing
         code.gsub!(/(#+)/) do
@@ -157,6 +158,7 @@ module Markdownizer
       Pygments.highlight(text.to_s, :lexer => language, :options => opts).to_s.force_encoding("UTF-8")
     end
 
+    private
     def extract_caption_from(code, options)
       caption = nil
       code.gsub!(%r[\{% caption '([^']+)' %\}]) do
