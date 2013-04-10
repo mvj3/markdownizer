@@ -161,7 +161,7 @@ module Markdownizer
         # parse [1,2,3]
         enumerable = JSON.parse(lines_str) if lines_str.match(/\[[0-9\,]+\]/)
         # parse (1..3)
-        enumerable = eval(lines_str) if lines_str.match(/\(?[0-9]+\.\.\.?[0-9]++\)?/)
+        enumerable = eval(lines_str) if enumerable.blank? && lines_str.match(/\(?[0-9]+\.\.\.?[0-9]++\)?/)
         enumerable = (Enumerable === enumerable)? enumerable : nil
         options.merge!({:highlight_lines => enumerable}) if enumerable
         ''
