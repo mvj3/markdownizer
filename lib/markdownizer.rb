@@ -74,6 +74,7 @@
 # [cr]: http://github.com/rubychan/coderay
 
 require 'rdiscount'
+require File.expand_path("../markdownizer/rails_engine.rb", __FILE__)
 require 'active_record' unless defined?(ActiveRecord)
 Pygments::Lexer.create :name => "XML", :filenames => ["*.xaml"], :aliases => ["xml"], :mimetypes => ["application/xml+evoque"] if defined?(Pygments)
 
