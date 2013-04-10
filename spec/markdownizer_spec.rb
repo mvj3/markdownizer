@@ -51,7 +51,9 @@ describe Markdownizer do
       end
     end
   end
+
   describe ".coderay(text)" do
+    Markdownizer.highlight_engine = :coderay
     let(:text) { """
       #My markdown text
 

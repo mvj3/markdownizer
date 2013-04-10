@@ -75,6 +75,7 @@
 
 require 'rdiscount'
 require 'active_record' unless defined?(ActiveRecord)
+Pygments::Lexer.create :name => "XML", :filenames => ["*.xaml"], :aliases => ["xml"], :mimetypes => ["application/xml+evoque"] if defined?(Pygments)
 
 module Markdownizer
   require 'active_support/core_ext/module/attribute_accessors.rb'
@@ -114,14 +115,25 @@ module Markdownizer
     #   * {% highlight [1,2,3] %} highlights lines 1, 2 and 3. It accepts any
     #     Enumerable, so you can also give a Range (1..3).
     #
-    def coderay(text, options = {})
-      text.gsub(%r[\{% code (\w+?) %\}(.+?)\{% endcode %\}]m) do
+    def coderay text, options = {}
+      highlight text, options
+    end
+
+
+    private
+    def highlight text, options
+      text.gsub(%r/\{% code (\w+?) %\}(.+?)\{% endcode %\}|```(\w+?) +(.+?)```/m) do
         options.delete(:highlight_lines)
         options.delete(:caption)
 
         enclosing_class = options[:enclosing_class] || 'markdownizer_code'
-
         code, language = $2.strip, $1.strip
+
+        language = if lexer = Pygments::Lexer.find_by_extname(language)
+          lexer.aliases[0]
+        else
+          'text'
+        end if Markdownizer.highlight_engine == :pygments
 
         # Mark comments to avoid conflicts with Header parsing
         code.gsub!(/(#+)/) do
@@ -131,21 +143,19 @@ module Markdownizer
         code, options, caption = extract_caption_from(code, options)
         code, options = extract_highlights_from(code, options)
 
-        html_caption = caption ? '<h5>' << caption << '</h5>' : nil
+        html_caption = caption ? ('<h5>' << caption << '</h5>') : ""
 
-        Markdownizer.highlight_engine # TODO
+        html_highlight = CodeRay.scan(code, language).div({:css => :class}.merge(options)) if Markdownizer.highlight_engine == :coderay
+        html_highlight = pygments(code, language) if Markdownizer.highlight_engine == :pygments
 
-        "<div class=\"#{enclosing_class}#{caption ? "\" caption=\"#{caption}" : ''}\">" <<
-          (html_caption || '') <<
-            CodeRay.scan(code, language).div({:css => :class}.merge(options)) <<
-              "</div>"
+        "<div class=\"#{enclosing_class}#{caption ? "\" caption=\"#{caption}" : ''}\">#{html_caption}#{html_highlight}</div>"
       end
     end
 
-    def pygments text, options = {}
+    def pygments text, language
+      opts = {:encoding => 'utf-8', :linenos => 'table', :linenostart => 1}
+      Pygments.highlight(text.to_s, :lexer => language, :options => opts).to_s.force_encoding("UTF-8")
     end
-
-    private
 
     def extract_caption_from(code, options)
       caption = nil
