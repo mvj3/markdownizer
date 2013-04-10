@@ -142,6 +142,9 @@ module Markdownizer
       end
     end
 
+    def pygments text, options = {}
+    end
+
     private
 
     def extract_caption_from(code, options)
@@ -218,7 +221,10 @@ module Markdownizer
       # `rendered_attribute` field.
       define_method render_method do
         _attribute = self.send(attribute)
-        _attribute = Markdownizer.markdown(Markdownizer.coderay(_attribute, options), hierarchy) if not _attribute.blank?
+        if not _attribute.blank?
+          _m = Markdownizer.send(Markdownizer.highlight_engine, _attribute, options)
+          _attribute = Markdownizer.markdown(_m, hierarchy)
+        end
         self.send(:"#{rendered_attribute}=", _attribute)
       end
     end
