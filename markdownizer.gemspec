@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'git'
   s.add_development_dependency 'pygments.rb'
   s.add_development_dependency 'coderay'
+  s.add_development_dependency 'json'
   s.add_development_dependency 'rspec', '~> 2.5.0'
   s.add_development_dependency 'pry-debugger'
 

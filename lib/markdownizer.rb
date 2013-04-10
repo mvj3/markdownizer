@@ -154,11 +154,14 @@ module Markdownizer
       [code.strip, options, caption]
     end
 
-    # FIXME: Find a safer way to eval code, MY LORD
     def extract_highlights_from(code, options)
       code.gsub!(%r[\{% highlight (.+) %\}]) do
-        # TODO JSON.parse
-        enumerable = eval($1.strip)
+        lines_str = $1.to_s.gsub(/\s/,'')
+        enumerable = nil
+        # parse [1,2,3]
+        enumerable = JSON.parse(lines_str) if lines_str.match(/\[[0-9\,]+\]/)
+        # parse (1..3)
+        enumerable = eval(lines_str) if lines_str.match(/\(?[0-9]+\.\.\.?[0-9]++\)?/)
         enumerable = (Enumerable === enumerable)? enumerable : nil
         options.merge!({:highlight_lines => enumerable}) if enumerable
         ''
