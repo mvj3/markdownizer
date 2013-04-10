@@ -27,7 +27,7 @@
 # This will place a `markdownizer.css` file in your `public/stylesheets`
 # folder. You will have to require it manually in your layouts, or through
 # `jammit`, or whatever.
-# 
+#
 # [gh]: http://github.com/codegram/markdownizer
 
 #### Usage
@@ -47,16 +47,16 @@
 #       # My H1 title
 #       Markdown is awesome!
 #       ## Some H2 title...
-# 
+#
 #       {% code ruby %}
-# 
+#
 #         # All this code will be highlighted properly! :)
 #         def my_method(*my_args)
 #           something do
 #             3 + 4
 #           end
 #         end
-# 
+#
 #       {% endcode %}
 #    """
 #
@@ -72,16 +72,22 @@
 #
 # [rd]: http://github.com/rtomayko/rdiscount
 # [cr]: http://github.com/rubychan/coderay
+
 require 'rdiscount'
-require 'coderay'
 require 'active_record' unless defined?(ActiveRecord)
 
 module Markdownizer
+  require 'active_support/core_ext/module/attribute_accessors.rb'
+  mattr_accessor :highlight_engine
+  self.highlight_engine ||= :coderay
+
+  ["coderay", "pygments"].each {|f| require f rescue nil }
+  raise "please install coderay or pygments at least one" if !defined?(CodeRay) || !defined?(Pygments)
 
   class << self
     # Here we define two helper methods. These will be called from the model to
     # perform the corresponding conversions and parsings.
-   
+
     # `Markdownizer.markdown` method converts plain Markdown text to formatted html.
     # To parse the markdown in a coherent hierarchical context, you must provide it
     # with the current hierarchical level of the text to be parsed.
@@ -127,7 +133,9 @@ module Markdownizer
 
         html_caption = caption ? '<h5>' << caption << '</h5>' : nil
 
-        "<div class=\"#{enclosing_class}#{caption ? "\" caption=\"#{caption}" : ''}\">" << 
+        Markdownizer.highlight_engine # TODO
+
+        "<div class=\"#{enclosing_class}#{caption ? "\" caption=\"#{caption}" : ''}\">" <<
           (html_caption || '') <<
             CodeRay.scan(code, language).div({:css => :class}.merge(options)) <<
               "</div>"
@@ -149,6 +157,7 @@ module Markdownizer
     # FIXME: Find a safer way to eval code, MY LORD
     def extract_highlights_from(code, options)
       code.gsub!(%r[\{% highlight (.+) %\}]) do
+        # TODO JSON.parse
         enumerable = eval($1.strip)
         enumerable = (Enumerable === enumerable)? enumerable : nil
         options.merge!({:highlight_lines => enumerable}) if enumerable
@@ -160,7 +169,7 @@ module Markdownizer
   end
 
   #### Public interface
-  
+
   # The Markdownizer DSL is the public interface of the gem, and can be called
   # from any ActiveRecord model.
   module DSL
@@ -168,7 +177,7 @@ module Markdownizer
     # Calling `markdownize! :attribute` (where `:attribute` can be any database
     # attribute with type `text`) will treat this field as Markdown.
     # You can pass an `options` hash for CodeRay. An example option would be:
-    #   
+    #
     #   * `:line_numbers => :table` (or `:inline`)
     #
     # You can check other available options in CodeRay's documentation.

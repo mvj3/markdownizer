@@ -15,13 +15,15 @@ Gem::Specification.new do |s|
   s.rubyforge_project = "markdownizer"
 
   s.add_runtime_dependency 'activerecord', '>= 3.0.3'
+  s.add_runtime_dependency 'activesupport'
   s.add_runtime_dependency 'rdiscount'
-  s.add_runtime_dependency 'coderay'
 
   s.add_development_dependency 'rocco'
   s.add_development_dependency 'git'
-  s.add_development_dependency 'pygments'
+  s.add_development_dependency 'pygments.rb'
+  s.add_development_dependency 'coderay'
   s.add_development_dependency 'rspec', '~> 2.5.0'
+  s.add_development_dependency 'pry-debugger'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")

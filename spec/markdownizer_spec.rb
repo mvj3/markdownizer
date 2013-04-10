@@ -9,7 +9,7 @@ describe Markdownizer do
 
         RDiscount.should_receive(:new).with(text).and_return rdiscount
         rdiscount.should_receive(:to_html).and_return html_markdown
-        
+
         subject.markdown(text).should == html_markdown
       end
     end
@@ -192,7 +192,7 @@ describe Markdownizer do
       context "when either of attribute or rendered_attribute does not exist" do
         it 'raises' do
           expect {
-            @klass.markdownize! :some_attribute             
+            @klass.markdownize! :some_attribute
           }.to raise_error
         end
       end
