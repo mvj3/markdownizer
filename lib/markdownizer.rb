@@ -121,19 +121,23 @@ module Markdownizer
 
 
     def highlight text, options
-      text.gsub(%r/\{% code (\w+?) %\}((.|\n)+?)\{% endcode %\}|```\w+\s+?[\r\n\t]+.+[\r\n\t]+```/m) do |m|
+      text.gsub(%r/\{%\s+code\s+?(\w+)\s+\%\}(.+?)\{% endcode %\}|```(\w+)\s+?[\r\n\t]+(.+)[\r\n\t]+```/m) do |m|
         options.delete(:highlight_lines)
         options.delete(:caption)
         enclosing_class = options[:enclosing_class] || 'markdownizer_code'
 
-        if Markdownizer.highlight_engine == :pygments
-          language = if lexer = Pygments::Lexer.find_by_extname(language)
+        if ($1 && $2) # {% code }
+          code, language = $2.strip, $1.strip
+        end
+
+        if ($3 && $4) # ```code ```
+          code, language = $4.strip, $3.strip
+
+          language = if lexer = (Pygments::Lexer.find(language) || Pygments::Lexer.find_by_extname(".#{language}") || Pygments::Lexer.find_by_alias(language.downcase))
             lexer.aliases[0]
           else
             'text'
           end
-        else
-          code, language = $2.strip, $1.strip
         end
 
         # Mark comments to avoid conflicts with Header parsing
