@@ -185,7 +185,7 @@ describe Markdownizer do
     before do
       ActiveRecord::Base.stub(:send)
       @klass = Class.new(ActiveRecord::Base)
-      @klass.stub(:column_names) { %{body rendered_body} }
+      @klass.stub(:column_names) { %w{body rendered_body} }
     end
 
     describe "#markdownize!(attribute)" do
@@ -205,7 +205,7 @@ describe Markdownizer do
           klass = Class.new do
             extend Markdownizer::DSL
             def self.column_names
-              %{body rendered_body}
+              %w{body rendered_body}
             end
           end
 

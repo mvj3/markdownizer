@@ -179,18 +179,26 @@ module Markdownizer
 
     # Calling `markdownize! :attribute` (where `:attribute` can be any database
     # attribute with type `text`) will treat this field as Markdown.
+    # And you can call markdownize! multiple times to many columns in a single ActiveRecord model.
+    #
+    # The default rendered field will be "rendered_#{attribute}", but you can also pass a option:
+    # * `:rendered_attribute => :markdown_attribute`
+    #
     # You can pass an `options` hash for CodeRay. An example option would be:
     #
     #   * `:line_numbers => :table` (or `:inline`)
     #
     # You can check other available options in CodeRay's documentation.
+    #
     def markdownize! attribute, options = {}
-      # Check that both `:attribute` and `:rendered_attribute` columns exist.
+      rendered_attribute = (options.delete(:rendered_attribute) || "rendered_#{attribute}").to_sym
+
+      # Check that both `:attribute` and `rendered_attribute` columns exist.
       # If they don't, it raises an error indicating that the user should generate
       # a migration.
-      unless self.column_names.include?(attribute.to_s) &&
-               self.column_names.include?("rendered_#{attribute}")
-        raise "#{self.name} doesn't have required attributes :#{attribute} and :rendered_#{attribute}\nPlease generate a migration to add these attributes -- both should have type :text."
+      _columns = [attribute, rendered_attribute].map(&:to_s)
+      if (self.column_names & _columns).size != _columns.size
+        raise "#{self.name} doesn't have required attributes :#{attribute} and :#{rendered_attribute}\nPlease generate a migration to add these attributes -- both should have type :text."
       end
 
       # The `:hierarchy` option tells Markdownizer the smallest header tag that
@@ -203,14 +211,15 @@ module Markdownizer
 
       # Create a `before_save` callback which will convert plain text to
       # Markdownized html every time the model is saved.
-      self.before_save :"render_#{attribute}"
+      render_method = :"render_#{attribute}"
+      self.before_save render_method
 
       # Define the converter method, which will assign the rendered html to the
-      # `:rendered_attribute` field.
-      define_method :"render_#{attribute}" do
+      # `rendered_attribute` field.
+      define_method render_method do
         _attribute = self.send(attribute)
         _attribute = Markdownizer.markdown(Markdownizer.coderay(_attribute, options), hierarchy) if not _attribute.blank?
-        self.send(:"rendered_#{attribute}=", _attribute)
+        self.send(:"#{rendered_attribute}=", _attribute)
       end
     end
   end
