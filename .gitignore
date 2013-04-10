@@ -3,3 +3,4 @@ pkg/*
 .bundle
 docs/
 .idea/*
+Gemfile.lock
