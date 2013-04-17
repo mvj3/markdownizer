@@ -76,7 +76,6 @@
 require 'rdiscount'
 require File.expand_path("../markdownizer/rails_engine.rb", __FILE__)
 require 'active_record' unless defined?(ActiveRecord)
-Pygments::Lexer.create :name => "XML", :filenames => ["*.xaml"], :aliases => ["xml"], :mimetypes => ["application/xml+evoque"] if defined?(Pygments)
 
 module Markdownizer
   require 'active_support/core_ext/module/attribute_accessors.rb'
@@ -84,6 +83,9 @@ module Markdownizer
   self.highlight_engine ||= :coderay
 
   ["coderay", "pygments"].each {|f| require f rescue nil }
+  if defined?(Pygments)
+    Pygments::Lexer.create :name => "XML", :filenames => ["*.xaml"], :aliases => ["xml"], :mimetypes => ["application/xml+evoque"]
+  end
   raise "please install coderay or pygments at least one" if !defined?(CodeRay) || !defined?(Pygments)
 
   class << self
